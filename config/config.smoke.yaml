@@ -47,6 +47,10 @@ step2:
   num_workers: 0
   train_timesteps: 100
   sample_count: 4
+  conditional:
+    enabled: false
+    labels_csv: ""
+    num_classes: 3
 
 step3:
   output_dir: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step3"
@@ -60,6 +64,10 @@ step3:
   train_timesteps: 50
   sample_count: 2
   num_workers: 0
+  conditional:
+    enabled: false
+    labels_csv: ""
+    num_classes: 3
 
 step4:
   output_dir: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step4"

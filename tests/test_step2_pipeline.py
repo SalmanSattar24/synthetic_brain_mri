@@ -72,8 +72,9 @@ class TestStep2Pipeline(unittest.TestCase):
 
             ds = ADNISliceDataset([p], image_size=64, slices_per_volume=10)
             self.assertEqual(len(ds), 10)
-            x = ds[0]
+            x, cls = ds[0]
             self.assertEqual(tuple(x.shape), (1, 64, 64))
+            self.assertEqual(cls, 0)
 
 
 if __name__ == "__main__":

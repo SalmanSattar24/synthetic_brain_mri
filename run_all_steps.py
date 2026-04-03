@@ -15,6 +15,16 @@ def run_cmd(cmd: list[str]) -> None:
         raise SystemExit(result.returncode)
 
 
+def _step_summary_paths(cfg: dict) -> dict[int, Path]:
+    return {
+        1: Path(cfg.get("paths", {}).get("step1_output", "results/step1")) / "step1_manifest.csv",
+        2: Path(cfg.get("step2", {}).get("output_dir", "results/step2")) / "step2_summary.json",
+        3: Path(cfg.get("step3", {}).get("output_dir", "results/step3")) / "step3_summary.json",
+        4: Path(cfg.get("step4", {}).get("output_dir", "results/step4")) / "step4_summary.json",
+        5: Path(cfg.get("step5", {}).get("output_dir", "results/step5")) / "step5_summary.json",
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run synthetic brain MRI pipeline end-to-end")
     parser.add_argument("--config", type=Path, default=Path("config/config.yaml"))
@@ -30,6 +40,7 @@ def main() -> None:
     parser.add_argument("--num-workers", type=int, default=None)
     parser.add_argument("--start-step", type=int, default=1)
     parser.add_argument("--end-step", type=int, default=5)
+    parser.add_argument("--resume-auto", action="store_true", help="Automatically start from first incomplete step.")
     args = parser.parse_args()
 
     profile = "smoke" if args.smoke_test else args.profile
@@ -70,6 +81,21 @@ def main() -> None:
     if args.preflight:
         run_cmd([sys.executable, "run_preflight.py", "--config", str(effective_config)])
 
+    with effective_config.open("r", encoding="utf-8") as f:
+        effective_cfg_raw = yaml.safe_load(f)
+
+    start_step = args.start_step
+    if args.resume_auto:
+        summaries = _step_summary_paths(effective_cfg_raw)
+        while start_step <= args.end_step and summaries[start_step].exists():
+            print(f"[resume-auto] Step {start_step} already complete ({summaries[start_step]}), skipping.")
+            start_step += 1
+        if start_step > args.end_step:
+            print("[resume-auto] All requested steps already completed.")
+            if tmp_config_path is not None and tmp_config_path.exists():
+                tmp_config_path.unlink(missing_ok=True)
+            return
+
     steps = {
         1: [sys.executable, "run_step1_preprocessing.py", "--config", str(effective_config)],
         2: [sys.executable, "run_step2_ddpm_baseline.py", "--config", str(effective_config)],
@@ -83,7 +109,7 @@ def main() -> None:
     if args.num_workers is not None:
         steps[1].extend(["--num-workers", str(args.num_workers)])
 
-    for step in range(args.start_step, args.end_step + 1):
+    for step in range(start_step, args.end_step + 1):
         run_cmd(steps[step])
 
     if tmp_config_path is not None and tmp_config_path.exists():

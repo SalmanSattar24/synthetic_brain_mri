@@ -64,6 +64,28 @@ def main() -> None:
             report["hard_failures"].append(f"Cannot create output dir {p}: {exc}")
     report["checks"]["output_dirs_writable"] = writable
 
+    # Conditional label checks.
+    s2_cond = cfg.get("step2", {}).get("conditional", {})
+    s3_cond = cfg.get("step3", {}).get("conditional", {})
+    for name, cond in (("step2", s2_cond), ("step3", s3_cond)):
+        enabled = bool(cond.get("enabled", False))
+        labels_csv = str(cond.get("labels_csv", "")).strip()
+        check_key = f"{name}_conditional"
+        if not enabled:
+            report["checks"][check_key] = {"enabled": False}
+            continue
+
+        labels_ok = bool(labels_csv) and Path(labels_csv).exists()
+        report["checks"][check_key] = {
+            "enabled": True,
+            "labels_csv": labels_csv,
+            "labels_csv_exists": labels_ok,
+        }
+        if not labels_ok:
+            report["hard_failures"].append(
+                f"{name} conditional enabled but labels CSV missing: {labels_csv or '<empty>'}"
+            )
+
     # Core python dependencies.
     required = [
         "numpy",

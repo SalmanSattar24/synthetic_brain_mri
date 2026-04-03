@@ -17,6 +17,8 @@ from diffusers import DDPMScheduler
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
+from src.common.labels import build_label_lookup, lookup_subject_class
+
 
 @dataclass
 class Step3Config:
@@ -33,6 +35,9 @@ class Step3Config:
     sample_count: int
     num_workers: int
     seed: int
+    conditional_enabled: bool
+    labels_csv: Path | None
+    num_classes: int
 
 
 def _set_seed(seed: int) -> None:
@@ -49,7 +54,9 @@ def load_step3_config(config_path: Path) -> Step3Config:
 
     paths = cfg["paths"]
     s3 = cfg.get("step3", {})
+    cond = s3.get("conditional", {})
     project = cfg.get("project", {})
+    labels_csv_raw = cond.get("labels_csv", "")
 
     return Step3Config(
         step1_output=Path(paths["step1_output"]),
@@ -65,6 +72,9 @@ def load_step3_config(config_path: Path) -> Step3Config:
         sample_count=int(s3.get("sample_count", 4)),
         num_workers=int(s3.get("num_workers", 0)),
         seed=int(project.get("seed", 42)),
+        conditional_enabled=bool(cond.get("enabled", False)),
+        labels_csv=Path(labels_csv_raw) if labels_csv_raw else None,
+        num_classes=int(cond.get("num_classes", 3)),
     )
 
 
@@ -81,21 +91,30 @@ def _resize_volume(volume: np.ndarray, target_shape: Sequence[int]) -> np.ndarra
     return t[0, 0].cpu().numpy()
 
 
-class ADNI3DVolumeDataset(Dataset[torch.Tensor]):
-    def __init__(self, volume_paths: Sequence[Path], target_shape: Sequence[int]):
+class ADNI3DVolumeDataset(Dataset[tuple[torch.Tensor, int]]):
+    def __init__(
+        self,
+        volume_paths: Sequence[Path],
+        target_shape: Sequence[int],
+        volume_to_class: dict[Path, int] | None = None,
+        default_class: int = 0,
+    ):
         self.volume_paths = list(volume_paths)
         self.target_shape = tuple(int(x) for x in target_shape)
+        self.volume_to_class = volume_to_class or {}
+        self.default_class = default_class
 
     def __len__(self) -> int:
         return len(self.volume_paths)
 
-    def __getitem__(self, idx: int) -> torch.Tensor:
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, int]:
         p = self.volume_paths[idx]
         vol = nib.load(str(p), mmap=True).get_fdata(dtype=np.float32)
         vol = np.nan_to_num(vol, nan=0.0, posinf=1.0, neginf=-1.0)
         vol = np.clip(vol, -1.0, 1.0)
         vol = _resize_volume(vol, self.target_shape)
-        return torch.from_numpy(vol[None, ...]).float()
+        cls = self.volume_to_class.get(p, self.default_class)
+        return torch.from_numpy(vol[None, ...]).float(), int(cls)
 
 
 class TinyAutoencoder3D(nn.Module):
@@ -125,21 +144,29 @@ class TinyAutoencoder3D(nn.Module):
 
 
 class TinyLatentDenoiser3D(nn.Module):
-    def __init__(self, latent_channels: int):
+    def __init__(self, latent_channels: int, num_classes: int = 0):
         super().__init__()
+        self.num_classes = num_classes
         self.net = nn.Sequential(
-            nn.Conv3d(latent_channels + 1, 32, kernel_size=3, padding=1),
+            nn.Conv3d(latent_channels + 1 + num_classes, 32, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv3d(32, 32, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv3d(32, latent_channels, kernel_size=3, padding=1),
         )
 
-    def forward(self, z_noisy: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
+    def forward(self, z_noisy: torch.Tensor, t: torch.Tensor, labels: torch.Tensor | None = None) -> torch.Tensor:
         # Broadcast scalar timestep embedding as extra channel.
         t_embed = t.float().view(-1, 1, 1, 1, 1) / 1000.0
         t_embed = t_embed.expand(-1, 1, z_noisy.shape[2], z_noisy.shape[3], z_noisy.shape[4])
-        return self.net(torch.cat([z_noisy, t_embed], dim=1))
+        pieces = [z_noisy, t_embed]
+        if self.num_classes > 0:
+            if labels is None:
+                labels = torch.zeros((z_noisy.shape[0],), device=z_noisy.device, dtype=torch.long)
+            one_hot = torch.nn.functional.one_hot(labels.long(), num_classes=self.num_classes).float()
+            one_hot = one_hot[:, :, None, None, None].expand(-1, -1, z_noisy.shape[2], z_noisy.shape[3], z_noisy.shape[4])
+            pieces.append(one_hot)
+        return self.net(torch.cat(pieces, dim=1))
 
 
 def run_step3(config_path: Path) -> Path:
@@ -156,7 +183,26 @@ def run_step3(config_path: Path) -> Path:
     if not volumes:
         raise RuntimeError(f"No preprocessed volumes found in {cfg.step1_output}. Run Step 1 first.")
 
-    dataset = ADNI3DVolumeDataset(volumes, cfg.volume_shape)
+    volume_to_class: dict[Path, int] = {}
+    labeled_volumes = 0
+    if cfg.conditional_enabled:
+        if cfg.labels_csv is None:
+            raise RuntimeError("Step3 conditional mode enabled but step3.conditional.labels_csv is missing.")
+        lookup = build_label_lookup(cfg.labels_csv)
+        cfg.num_classes = max(cfg.num_classes, lookup.num_classes)
+        for p in volumes:
+            cls = lookup_subject_class(p, lookup)
+            if cls is not None:
+                volume_to_class[p] = int(cls)
+                labeled_volumes += 1
+        if labeled_volumes == 0:
+            raise RuntimeError("Step3 conditional mode enabled but no volume paths matched labels CSV subject IDs.")
+
+    dataset = ADNI3DVolumeDataset(
+        volumes,
+        cfg.volume_shape,
+        volume_to_class=volume_to_class if cfg.conditional_enabled else None,
+    )
     loader = DataLoader(
         dataset,
         batch_size=cfg.batch_size,
@@ -167,7 +213,10 @@ def run_step3(config_path: Path) -> Path:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     autoencoder = TinyAutoencoder3D(latent_channels=cfg.latent_channels).to(device)
-    denoiser = TinyLatentDenoiser3D(latent_channels=cfg.latent_channels).to(device)
+    denoiser = TinyLatentDenoiser3D(
+        latent_channels=cfg.latent_channels,
+        num_classes=cfg.num_classes if cfg.conditional_enabled else 0,
+    ).to(device)
 
     ae_opt = torch.optim.AdamW(autoencoder.parameters(), lr=cfg.learning_rate)
     ae_losses: list[float] = []
@@ -176,7 +225,7 @@ def run_step3(config_path: Path) -> Path:
     for _ in range(cfg.autoencoder_epochs):
         epoch_loss = 0.0
         n = 0
-        for x in loader:
+        for x, _ in loader:
             x = x.to(device)
             x_hat = autoencoder(x)
             loss = F.l1_loss(x_hat, x) + F.mse_loss(x_hat, x)
@@ -198,15 +247,16 @@ def run_step3(config_path: Path) -> Path:
     for _ in range(cfg.diffusion_epochs):
         epoch_loss = 0.0
         n = 0
-        for x in loader:
+        for x, labels in loader:
             x = x.to(device)
+            labels = labels.to(device)
             with torch.no_grad():
                 z = autoencoder.encoder(x)
 
             noise = torch.randn_like(z)
             t = torch.randint(0, scheduler.config.num_train_timesteps, (z.shape[0],), device=device).long()
             z_noisy = scheduler.add_noise(z, noise, t)
-            noise_pred = denoiser(z_noisy, t)
+            noise_pred = denoiser(z_noisy, t, labels if cfg.conditional_enabled else None)
             loss = F.mse_loss(noise_pred, noise)
 
             denoise_opt.zero_grad(set_to_none=True)
@@ -219,15 +269,17 @@ def run_step3(config_path: Path) -> Path:
 
     # Infer latent spatial shape from one batch.
     with torch.no_grad():
-        example_x = next(iter(loader)).to(device)
+        example_x, _ = next(iter(loader))
+        example_x = example_x.to(device)
         latent_shape = tuple(autoencoder.encoder(example_x).shape[1:])
 
     denoiser.eval()
     with torch.no_grad():
         z = torch.randn((cfg.sample_count, *latent_shape), device=device)
+        sample_labels = torch.arange(cfg.sample_count, device=device) % max(1, cfg.num_classes)
         for t in scheduler.timesteps:
             t_batch = torch.full((cfg.sample_count,), int(t), device=device, dtype=torch.long)
-            noise_pred = denoiser(z, t_batch)
+            noise_pred = denoiser(z, t_batch, sample_labels if cfg.conditional_enabled else None)
             z = scheduler.step(noise_pred, t, z).prev_sample
 
         x_syn = autoencoder.decoder(z).clamp(-1.0, 1.0).cpu().numpy()  # [N,1,D,H,W]
@@ -256,6 +308,12 @@ def run_step3(config_path: Path) -> Path:
         "latent_shape": list(latent_shape),
         "autoencoder_epoch_losses": ae_losses,
         "diffusion_epoch_losses": diff_losses,
+        "conditional": {
+            "enabled": cfg.conditional_enabled,
+            "labels_csv": str(cfg.labels_csv) if cfg.labels_csv else None,
+            "num_classes": cfg.num_classes,
+            "labeled_volumes": labeled_volumes,
+        },
         "autoencoder_checkpoint": str(ae_ckpt),
         "denoiser_checkpoint": str(denoise_ckpt),
         "samples_npy": str(samples_npy),

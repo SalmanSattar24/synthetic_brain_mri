@@ -35,6 +35,12 @@ This repository contains a 5-step pipeline for conditional synthesis of T1-weigh
 - `smoke`: auto-overrides to a very small fast run
 - `full`: auto-removes data caps (`max_volumes`, `max_real_volumes`, etc.)
 
+## Resume support
+
+- Add `--resume-auto` to skip already-completed steps based on existing summary artifacts.
+- Example:
+  - `python run_all_steps.py --config config/config.full.yaml --profile full --preflight --resume-auto`
+
 Examples:
 
 - Smoke debug:
@@ -61,6 +67,8 @@ Examples:
   - increase `cfg['step1']['num_workers']` carefully (CPU/RAM dependent)
 5. Use the notebook's pipeline command (already configured) with preflight:
   - `run_all_steps.py --profile config --preflight --start-step 1 --end-step 5`
+6. If Colab disconnects or times out, re-run with resume enabled:
+  - `run_all_steps.py --profile config --preflight --resume-auto`
 
 > Recommended flow on Colab: run once in smoke mode first, then switch to full mode.
 
@@ -101,6 +109,25 @@ Examples:
 
 - FreeSurfer outputs (or pipeline integration) for publication-grade biomarker validation.
 - Additional ADNI phases (ADNI2/GO/ADNI3) for scale and diversity.
+
+## Enabling conditional CN/MCI/AD training
+
+Conditional mode is now available in Steps 2 and 3.
+
+1. Prepare a CSV with columns:
+  - subject id: one of `subject_id`, `ptid`, `participant_id`, `subject`
+  - diagnosis: one of `diagnosis`, `dx`, `group`, `label`
+2. Supported diagnosis mapping by default:
+  - `CN`/`NORMAL`/`CONTROL` → 0
+  - `MCI`/`EMCI`/`LMCI` → 1
+  - `AD`/`ALZHEIMER` → 2
+3. Enable in config:
+  - `step2.conditional.enabled: true`
+  - `step2.conditional.labels_csv: <path-to-labels.csv>`
+  - `step3.conditional.enabled: true`
+  - `step3.conditional.labels_csv: <path-to-labels.csv>`
+
+`run_preflight.py` will fail fast if conditional mode is enabled but labels CSV is missing.
 
 ## Real-data readiness checklist
 
