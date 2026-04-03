@@ -25,9 +25,9 @@ def main() -> None:
     steps = {
         1: [sys.executable, "run_step1.py", "--config", str(args.config)],
         2: [sys.executable, "run_step2.py", "--config", str(args.config)],
-        3: [sys.executable, "run_step3.py"],
-        4: [sys.executable, "run_step4.py"],
-        5: [sys.executable, "run_step5.py"],
+        3: [sys.executable, "run_step3.py", "--config", str(args.config)],
+        4: [sys.executable, "run_step4.py", "--config", str(args.config)],
+        5: [sys.executable, "run_step5.py", "--config", str(args.config)],
     }
 
     if args.smoke_test:

@@ -55,3 +55,27 @@ step2:
   num_workers: 2
   train_timesteps: 1000
   sample_count: 8
+
+step3:
+  output_dir: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step3"
+  max_volumes: 12
+  volume_shape: [64, 64, 64]
+  batch_size: 2
+  autoencoder_epochs: 1
+  diffusion_epochs: 1
+  learning_rate: 0.0001
+  latent_channels: 8
+  train_timesteps: 200
+  sample_count: 4
+  num_workers: 0
+
+step4:
+  output_dir: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step4"
+  max_real_volumes: 16
+  max_synth_volumes: 16
+
+step5:
+  output_dir: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step5"
+  max_real_volumes: 24
+  benchmark_count: 8
+  volume_shape: [64, 64, 64]

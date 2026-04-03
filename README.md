@@ -27,6 +27,16 @@ This repository contains a 5-step pipeline for conditional synthesis of T1-weigh
   - smoke test mode (`smoke_test: true`, default 5 scans)
   - parallel preprocessing workers (`num_workers`)
 
+## Current implementation status
+
+- Step 1: implemented preprocessing pipeline (N4, HD-BET hook, registration + normalization)
+- Step 2: implemented 2D DDPM baseline training/sampling
+- Step 3: implemented 3D latent diffusion-style training/sampling
+- Step 4: implemented validation suite with proxy FID + biomarker proxy + classification utility
+- Step 5: implemented benchmarking suite against DCGAN/StyleGAN2/VAE3D-style baselines
+
+> Note: Step 4/5 use computationally lightweight proxy evaluations to support rapid iteration and Colab workflows. You can swap in full FreeSurfer and publication-grade metrics later without changing orchestration.
+
 ## Notes
 
 - ADNI path is set to:
