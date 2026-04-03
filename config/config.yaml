@@ -57,7 +57,7 @@ step2:
   sample_count: 8
   conditional:
     enabled: false
-    labels_csv: ""
+    labels_csv: "C:/All-Code/AD_Research/synthetic_brain_mri/data/metadata/reference/ADNIMERGE_03Apr2026.csv"
     num_classes: 3
 
 step3:
@@ -74,7 +74,7 @@ step3:
   num_workers: 0
   conditional:
     enabled: false
-    labels_csv: ""
+    labels_csv: "C:/All-Code/AD_Research/synthetic_brain_mri/data/metadata/reference/ADNIMERGE_03Apr2026.csv"
     num_classes: 3
 
 step4:
