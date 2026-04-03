@@ -13,6 +13,8 @@ venv/
 data/raw/
 data/interim/
 data/processed/
+data/templates/
+data/metadata/
 results/
 logs/
 

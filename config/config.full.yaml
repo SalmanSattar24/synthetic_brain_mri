@@ -30,7 +30,7 @@ step1:
     enabled: true
     target_shape: [128, 128, 128]
     target_spacing: [1.5, 1.5, 1.5]
-    mni_template_path: ""
+    mni_template_path: "C:/All-Code/AD_Research/synthetic_brain_mri/data/templates/MNI152_T1_1mm.nii"
   intensity_normalization:
     enabled: true
     percentile_clip: [0.5, 99.5]
