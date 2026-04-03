@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import random
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Dict, List, Sequence
 
@@ -187,7 +187,7 @@ def run_step5(config_path: Path) -> Path:
         "step": 5,
         "name": "Benchmarking",
         "status": "complete",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "num_real_used": len(real_resized),
         "num_fake_per_model": cfg.benchmark_count,
         "metrics": results,

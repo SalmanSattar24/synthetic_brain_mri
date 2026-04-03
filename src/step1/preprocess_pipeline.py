@@ -3,9 +3,11 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import csv
+import importlib.util
 import logging
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence
@@ -116,22 +118,40 @@ def n4_bias_correct(image: sitk.Image, shrink_factor: int, max_iterations: Seque
 
 def skull_strip_with_hdbet(input_path: Path, output_path: Path, device: str, mode: str) -> bool:
     hdbet_cmd = shutil.which("hd-bet")
+    use_module_fallback = False
     if not hdbet_cmd:
-        LOGGER.warning("HD-BET not found in PATH. Skipping skull stripping for %s", input_path)
-        return False
+        if importlib.util.find_spec("HD_BET") is None:
+            LOGGER.warning("HD-BET not found in PATH/module. Skipping skull stripping for %s", input_path)
+            return False
+        use_module_fallback = True
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [
-        hdbet_cmd,
-        "-i",
-        str(input_path),
-        "-o",
-        str(output_path),
-        "-device",
-        device,
-        "-mode",
-        mode,
-    ]
+    if use_module_fallback:
+        cmd = [
+            sys.executable,
+            "-m",
+            "HD_BET.run",
+            "-i",
+            str(input_path),
+            "-o",
+            str(output_path),
+            "-device",
+            device,
+            "-mode",
+            mode,
+        ]
+    else:
+        cmd = [
+            hdbet_cmd,
+            "-i",
+            str(input_path),
+            "-o",
+            str(output_path),
+            "-device",
+            device,
+            "-mode",
+            mode,
+        ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:

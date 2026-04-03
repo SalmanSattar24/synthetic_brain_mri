@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import random
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import List, Sequence
 
@@ -143,7 +143,7 @@ def run_step4(config_path: Path) -> Path:
         "step": 4,
         "name": "Three-layer validation",
         "status": "complete",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "num_real": len(real),
         "num_synthetic": len(synth),
         "proxy_fid": proxy_fid,

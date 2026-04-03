@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import random
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import List, Sequence, Tuple
 
@@ -214,7 +214,7 @@ def run_step2(config_path: Path) -> Path:
         "step": 2,
         "name": "2D DDPM baseline",
         "status": "complete",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "device": str(device),
         "num_input_volumes": len(volume_paths),
         "num_training_slices": len(dataset),

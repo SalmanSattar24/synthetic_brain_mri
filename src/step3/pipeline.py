@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import random
@@ -249,7 +249,7 @@ def run_step3(config_path: Path) -> Path:
         "step": 3,
         "name": "3D Latent Diffusion Model",
         "status": "complete",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "device": str(device),
         "num_input_volumes": len(volumes),
         "train_volume_shape": list(cfg.volume_shape),

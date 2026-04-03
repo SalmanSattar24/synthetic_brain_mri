@@ -1,0 +1,73 @@
+project:
+  name: synthetic_brain_mri
+  seed: 42
+  expected_num_scans: 421
+
+paths:
+  adni_root: "C:/All-Code/AD_Research/ADNI1_Complete_1Yr_3T/ADNI"
+  data_raw: "C:/All-Code/AD_Research/synthetic_brain_mri/data/raw"
+  data_interim: "C:/All-Code/AD_Research/synthetic_brain_mri/data/interim"
+  data_processed: "C:/All-Code/AD_Research/synthetic_brain_mri/data/processed"
+  step1_output: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step1"
+
+step1:
+  file_globs: ["**/*.nii", "**/*.nii.gz"]
+  max_cases: null
+  smoke_test: true
+  smoke_test_cases: 5
+  num_workers: 1
+  overwrite: false
+  n4:
+    enabled: true
+    shrink_factor: 4
+    num_control_points: 4
+    max_iterations: [20, 20, 10, 5]
+  skull_strip:
+    enabled: false
+    hdbet_device: "cpu"
+    hdbet_mode: "fast"
+  registration:
+    enabled: true
+    target_shape: [128, 128, 128]
+    target_spacing: [1.5, 1.5, 1.5]
+    mni_template_path: ""
+  intensity_normalization:
+    enabled: true
+    percentile_clip: [0.5, 99.5]
+    output_range: [-1.0, 1.0]
+
+step2:
+  output_dir: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step2"
+  max_volumes: 8
+  image_size: 64
+  slices_per_volume: 8
+  train_batch_size: 4
+  num_epochs: 1
+  learning_rate: 0.0001
+  num_workers: 0
+  train_timesteps: 100
+  sample_count: 4
+
+step3:
+  output_dir: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step3"
+  max_volumes: 4
+  volume_shape: [32, 32, 32]
+  batch_size: 1
+  autoencoder_epochs: 1
+  diffusion_epochs: 1
+  learning_rate: 0.0001
+  latent_channels: 4
+  train_timesteps: 50
+  sample_count: 2
+  num_workers: 0
+
+step4:
+  output_dir: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step4"
+  max_real_volumes: 8
+  max_synth_volumes: 8
+
+step5:
+  output_dir: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step5"
+  max_real_volumes: 8
+  benchmark_count: 4
+  volume_shape: [32, 32, 32]
