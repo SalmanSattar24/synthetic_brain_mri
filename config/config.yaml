@@ -1,0 +1,57 @@
+project:
+  name: synthetic_brain_mri
+  seed: 42
+  expected_num_scans: 421
+
+paths:
+  adni_root: "C:/All-Code/AD_Research/ADNI1_Complete_1Yr_3T/ADNI"
+  # For Colab, override this to your mounted Drive path, e.g.
+  # "/content/drive/MyDrive/AD_Research/ADNI1_Complete_1Yr_3T/ADNI"
+  data_raw: "C:/All-Code/AD_Research/synthetic_brain_mri/data/raw"
+  data_interim: "C:/All-Code/AD_Research/synthetic_brain_mri/data/interim"
+  data_processed: "C:/All-Code/AD_Research/synthetic_brain_mri/data/processed"
+  step1_output: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step1"
+
+step1:
+  file_globs:
+    - "**/*.nii"
+    - "**/*.nii.gz"
+  max_cases: null
+  smoke_test: false
+  smoke_test_cases: 5
+  num_workers: 1
+  overwrite: false
+
+  n4:
+    enabled: true
+    shrink_factor: 4
+    num_control_points: 4
+    max_iterations: [50, 50, 30, 20]
+
+  skull_strip:
+    enabled: true
+    hdbet_device: "cpu"   # cpu | cuda
+    hdbet_mode: "fast"    # fast | accurate
+
+  registration:
+    enabled: true
+    target_shape: [128, 128, 128]
+    target_spacing: [1.5, 1.5, 1.5]
+    mni_template_path: ""  # set to template .nii/.nii.gz to enable full registration
+
+  intensity_normalization:
+    enabled: true
+    percentile_clip: [0.5, 99.5]
+    output_range: [-1.0, 1.0]
+
+step2:
+  output_dir: "C:/All-Code/AD_Research/synthetic_brain_mri/results/step2"
+  max_volumes: 24
+  image_size: 128
+  slices_per_volume: 16
+  train_batch_size: 8
+  num_epochs: 1
+  learning_rate: 0.0001
+  num_workers: 2
+  train_timesteps: 1000
+  sample_count: 8
