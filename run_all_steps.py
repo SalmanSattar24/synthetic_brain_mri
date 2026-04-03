@@ -71,11 +71,11 @@ def main() -> None:
         run_cmd([sys.executable, "run_preflight.py", "--config", str(effective_config)])
 
     steps = {
-        1: [sys.executable, "run_step1.py", "--config", str(effective_config)],
-        2: [sys.executable, "run_step2.py", "--config", str(effective_config)],
-        3: [sys.executable, "run_step3.py", "--config", str(effective_config)],
-        4: [sys.executable, "run_step4.py", "--config", str(effective_config)],
-        5: [sys.executable, "run_step5.py", "--config", str(effective_config)],
+        1: [sys.executable, "run_step1_preprocessing.py", "--config", str(effective_config)],
+        2: [sys.executable, "run_step2_ddpm_baseline.py", "--config", str(effective_config)],
+        3: [sys.executable, "run_step3_3d_latent_diffusion.py", "--config", str(effective_config)],
+        4: [sys.executable, "run_step4_validation.py", "--config", str(effective_config)],
+        5: [sys.executable, "run_step5_benchmarking.py", "--config", str(effective_config)],
     }
 
     if args.smoke_test:
