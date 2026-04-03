@@ -8,7 +8,7 @@ import nibabel as nib
 import numpy as np
 import yaml
 
-from src.step3.pipeline import discover_real_volumes, run_step3
+from src.step3.latent_diffusion3d_pipeline import discover_real_volumes, run_step3
 
 
 class TestStep3Pipeline(unittest.TestCase):

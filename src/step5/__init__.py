@@ -1,1 +1,1 @@
-"""Step 5: benchmarking placeholder."""
+"""Step 5 package: benchmarking modules."""

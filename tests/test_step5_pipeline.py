@@ -8,7 +8,7 @@ import nibabel as nib
 import numpy as np
 import yaml
 
-from src.step5.pipeline import run_step5
+from src.step5.benchmarking_suite_pipeline import run_step5
 
 
 class TestStep5Pipeline(unittest.TestCase):

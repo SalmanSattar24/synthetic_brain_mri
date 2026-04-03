@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from src.step3.pipeline import run_step3
+from src.step3.latent_diffusion3d_pipeline import run_step3
 
 
 def main() -> None:

@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from src.step4.pipeline import run_step4
+from src.step4.validation_evaluation_pipeline import run_step4
 
 
 def main() -> None:

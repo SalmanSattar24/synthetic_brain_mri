@@ -8,7 +8,7 @@ import nibabel as nib
 import numpy as np
 import yaml
 
-from src.step4.pipeline import run_step4
+from src.step4.validation_evaluation_pipeline import run_step4
 
 
 class TestStep4Pipeline(unittest.TestCase):

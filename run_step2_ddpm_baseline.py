@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from src.step2.pipeline import run_step2
+from src.step2.ddpm2d_training_pipeline import run_step2
 
 
 def main() -> None:

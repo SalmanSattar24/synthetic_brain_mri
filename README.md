@@ -29,6 +29,14 @@ This repository contains a 5-step pipeline for conditional synthesis of T1-weigh
 - `run_step4_validation.py` → validation metrics and utility evaluation
 - `run_step5_benchmarking.py` → model comparison benchmarking
 
+## Step-folder module names (descriptive)
+
+- `src/step1/adni_preprocessing_pipeline.py`
+- `src/step2/ddpm2d_training_pipeline.py`
+- `src/step3/latent_diffusion3d_pipeline.py`
+- `src/step4/validation_evaluation_pipeline.py`
+- `src/step5/benchmarking_suite_pipeline.py`
+
 ## Run profiles
 
 - `config`: uses values exactly from your config file

@@ -49,7 +49,7 @@ def build_label_lookup(
     if not labels_csv.exists():
         raise FileNotFoundError(f"Labels file not found: {labels_csv}")
 
-    df = pd.read_csv(labels_csv)
+    df = pd.read_csv(labels_csv, low_memory=False)
     normalized = {_normalize_col(c): c for c in df.columns}
 
     subj_col = next((normalized.get(_normalize_col(c)) for c in subject_id_columns if _normalize_col(c) in normalized), None)

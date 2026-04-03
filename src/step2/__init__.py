@@ -1,1 +1,1 @@
-"""Step 2: 2D DDPM baseline placeholder."""
+"""Step 2 package: 2D DDPM baseline modules."""

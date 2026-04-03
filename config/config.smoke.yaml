@@ -48,7 +48,7 @@ step2:
   train_timesteps: 100
   sample_count: 4
   conditional:
-    enabled: false
+    enabled: true
     labels_csv: "C:/All-Code/AD_Research/synthetic_brain_mri/data/metadata/reference/ADNIMERGE_03Apr2026.csv"
     num_classes: 3
 
@@ -65,7 +65,7 @@ step3:
   sample_count: 2
   num_workers: 0
   conditional:
-    enabled: false
+    enabled: true
     labels_csv: "C:/All-Code/AD_Research/synthetic_brain_mri/data/metadata/reference/ADNIMERGE_03Apr2026.csv"
     num_classes: 3
 

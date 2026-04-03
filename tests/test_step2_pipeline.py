@@ -10,7 +10,7 @@ import yaml
 
 class TestStep2Pipeline(unittest.TestCase):
     def test_load_step2_config(self) -> None:
-        from src.step2.pipeline import load_step2_config
+        from src.step2.ddpm2d_training_pipeline import load_step2_config
 
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -39,7 +39,7 @@ class TestStep2Pipeline(unittest.TestCase):
             self.assertEqual(out.seed, 123)
 
     def test_discover_preprocessed_volumes(self) -> None:
-        from src.step2.pipeline import discover_preprocessed_volumes
+        from src.step2.ddpm2d_training_pipeline import discover_preprocessed_volumes
 
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -61,7 +61,7 @@ class TestStep2Pipeline(unittest.TestCase):
             self.skipTest(f"nibabel unavailable: {exc}")
             return
 
-        from src.step2.pipeline import ADNISliceDataset
+        from src.step2.ddpm2d_training_pipeline import ADNISliceDataset
 
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from src.step5.pipeline import run_step5
+from src.step5.benchmarking_suite_pipeline import run_step5
 
 
 def main() -> None:

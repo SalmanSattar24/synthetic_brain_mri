@@ -1,1 +1,1 @@
-"""Step 4: validation placeholder."""
+"""Step 4 package: validation and evaluation modules."""
